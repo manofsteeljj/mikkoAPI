@@ -1,28 +1,52 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Allow requests from any origin
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // Allow specific HTTP methods
-header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allow specific headers
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Set headers for CORS and JSON response
+header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
-require 'db.php'; // Include database connection
+
+// Include the database connection
+require 'db.php';
 
 try {
+    // SQL query to fetch activities
     $query = "
         SELECT 
-            a.id, a.user_id, a.activity_type, a.activity_text, 
-            a.created_at, u.username AS user_name
-        FROM activities a
-        LEFT JOIN users u ON a.user_id = u.id
-        ORDER BY a.created_at DESC
+            id, 
+            user_id, 
+            activity_type, 
+            activity_text, 
+            created_at 
+        FROM activities 
+        ORDER BY created_at DESC
     ";
+
     $result = $conn->query($query);
 
+    // Check if the query executed successfully
+    if (!$result) {
+        throw new Exception("Database query failed: " . $conn->error);
+    }
+
+    // Fetch data into an array
     $activities = [];
     while ($row = $result->fetch_assoc()) {
         $activities[] = $row;
     }
 
-    echo json_encode(['success' => true, 'activities' => $activities]);
+    // Return JSON response
+    echo json_encode([
+        'success' => true,
+        'activities' => $activities
+    ]);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error fetching activities']);
+    // Handle errors and return failure response
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>
